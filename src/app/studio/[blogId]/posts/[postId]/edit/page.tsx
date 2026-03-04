@@ -300,6 +300,7 @@ export default function EditPostPage() {
           {/* SEO Sidebar */}
           <SeoSidebar
             title={title}
+            body={body}
             metaTitle={metaTitle}
             metaDescription={metaDescription}
             slug={slug}

@@ -11,7 +11,7 @@ import { PostStatus } from "@/generated/prisma/client";
 
 interface PostsPageProps {
   params: Promise<{ blogId: string }>;
-  searchParams: Promise<{ status?: string; search?: string }>;
+  searchParams: Promise<{ status?: string; search?: string; page?: string }>;
 }
 
 const statusBadgeVariant = (status: string) => {
@@ -35,7 +35,9 @@ export default async function PostsPage({
   if (!session?.user) redirect("/login");
 
   const { blogId } = await params;
-  const { status, search } = await searchParams;
+  const { status, search, page: pageParam } = await searchParams;
+  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10));
+  const pageSize = 20;
 
   const blog = await prisma.blog.findUnique({
     where: { id: blogId },
@@ -96,14 +98,21 @@ export default async function PostsPage({
     }
   }
 
-  const posts = await prisma.post.findMany({
-    where,
-    orderBy: { updatedAt: "desc" },
-    include: {
-      author: { select: { id: true, name: true } },
-      category: { select: { id: true, name: true } },
-    },
-  });
+  const [posts, totalPosts] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        author: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+      },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.post.count({ where }),
+  ]);
+
+  const totalPages = Math.ceil(totalPosts / pageSize);
 
   return (
     <div className="space-y-6">
@@ -259,6 +268,37 @@ export default async function PostsPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-slate-500">
+            Showing {(currentPage - 1) * pageSize + 1}–
+            {Math.min(currentPage * pageSize, totalPosts)} of {totalPosts} posts
+          </p>
+          <div className="flex items-center gap-2">
+            {currentPage > 1 && (
+              <Link
+                href={`/studio/${blogId}/posts?page=${currentPage - 1}${status ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`}
+                className="rounded-md border border-border bg-navy-900 px-3 py-1.5 text-sm text-slate-300 hover:bg-navy-800 transition-colors"
+              >
+                Previous
+              </Link>
+            )}
+            <span className="text-sm text-slate-400">
+              Page {currentPage} of {totalPages}
+            </span>
+            {currentPage < totalPages && (
+              <Link
+                href={`/studio/${blogId}/posts?page=${currentPage + 1}${status ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`}
+                className="rounded-md border border-border bg-navy-900 px-3 py-1.5 text-sm text-slate-300 hover:bg-navy-800 transition-colors"
+              >
+                Next
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

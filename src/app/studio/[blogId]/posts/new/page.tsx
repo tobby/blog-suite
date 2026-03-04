@@ -243,6 +243,7 @@ export default function NewPostPage() {
           {/* SEO Sidebar */}
           <SeoSidebar
             title={title}
+            body={body}
             metaTitle={metaTitle}
             metaDescription={metaDescription}
             slug={slug}

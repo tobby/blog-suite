@@ -43,13 +43,15 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { llmTags, sitemapConfig, ogDefaultImage } = body;
+    const { llmTags, sitemapConfig, ogDefaultImage, faqSchema } = body;
 
     const settings = await prisma.globalSettings.upsert({
       where: { id: GLOBAL_ID },
       update: {
         ...(llmTags !== undefined && { llmTags }),
         ...(sitemapConfig !== undefined && { sitemapConfig }),
+        ...(ogDefaultImage !== undefined && { ogDefaultImage }),
+        ...(faqSchema !== undefined && { faqSchema }),
       },
       create: {
         id: GLOBAL_ID,
@@ -59,10 +61,12 @@ export async function PUT(request: Request) {
           changeFrequency: "weekly",
           defaultPriority: 0.7,
         },
+        ogDefaultImage: ogDefaultImage ?? null,
+        faqSchema: faqSchema ?? null,
       },
     });
 
-    return NextResponse.json({ ...settings, ogDefaultImage });
+    return NextResponse.json(settings);
   } catch (error) {
     console.error("Failed to update global settings:", error);
     return NextResponse.json(

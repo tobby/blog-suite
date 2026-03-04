@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Bot,
+  HelpCircle,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
@@ -34,9 +37,16 @@ interface SitemapConfig {
   defaultPriority: number;
 }
 
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
 interface GlobalSettingsData {
   llmTags: string[];
   sitemapConfig: SitemapConfig;
+  ogDefaultImage?: string;
+  faqSchema?: FaqItem[];
 }
 
 type ToastState = {
@@ -57,20 +67,23 @@ export default function SEOSettingsPage() {
     changeFrequency: "weekly",
     defaultPriority: 0.7,
   });
+  const [faqItems, setFaqItems] = useState<FaqItem[]>([]);
 
   useEffect(() => {
     async function fetchSettings() {
       try {
         const res = await fetch("/api/global-settings");
         if (!res.ok) throw new Error("Failed to fetch settings");
-        const data: GlobalSettingsData & { ogDefaultImage?: string } =
-          await res.json();
+        const data: GlobalSettingsData = await res.json();
         setBlockedBots(data.llmTags ?? []);
         if (data.sitemapConfig) {
           setSitemapConfig(data.sitemapConfig);
         }
         if (data.ogDefaultImage) {
           setOgImage(data.ogDefaultImage);
+        }
+        if (data.faqSchema && Array.isArray(data.faqSchema)) {
+          setFaqItems(data.faqSchema);
         }
       } catch {
         setToast({ type: "error", message: "Failed to load settings." });
@@ -95,9 +108,26 @@ export default function SEOSettingsPage() {
     );
   }
 
+  function addFaqItem() {
+    setFaqItems((prev) => [...prev, { question: "", answer: "" }]);
+  }
+
+  function updateFaqItem(index: number, field: "question" | "answer", value: string) {
+    setFaqItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  }
+
+  function removeFaqItem(index: number) {
+    setFaqItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
     setSaving(true);
     try {
+      const validFaq = faqItems.filter(
+        (item) => item.question.trim() && item.answer.trim()
+      );
       const res = await fetch("/api/global-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -105,6 +135,7 @@ export default function SEOSettingsPage() {
           llmTags: blockedBots,
           sitemapConfig,
           ogDefaultImage: ogImage || null,
+          faqSchema: validFaq.length > 0 ? validFaq : null,
         }),
       });
       if (!res.ok) throw new Error("Failed to save");
@@ -255,6 +286,70 @@ export default function SEOSettingsPage() {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* FAQ Schema Builder */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="h-5 w-5 text-neon" />
+                  <h2 className="text-lg font-semibold text-white">
+                    FAQ Schema Builder
+                  </h2>
+                </div>
+                <p className="text-sm text-slate-400">
+                  Add Q&A pairs to generate FAQPage structured data (JSON-LD) for
+                  rich search results.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {faqItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="rounded-md border border-navy-700 bg-navy-800/50 p-3 space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="shrink-0 rounded-full bg-neon/10 px-2 py-0.5 text-xs text-neon">
+                          Q{index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeFaqItem(index)}
+                          className="text-slate-500 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Question..."
+                        value={item.question}
+                        onChange={(e) =>
+                          updateFaqItem(index, "question", e.target.value)
+                        }
+                      />
+                      <textarea
+                        placeholder="Answer..."
+                        value={item.answer}
+                        onChange={(e) =>
+                          updateFaqItem(index, "answer", e.target.value)
+                        }
+                        rows={2}
+                        className="w-full rounded-md border border-border bg-navy-900 px-3 py-2 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-neon/50 focus:border-neon resize-none"
+                      />
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={addFaqItem}
+                    className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-navy-600 py-3 text-sm text-slate-400 hover:border-neon/30 hover:text-slate-300 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Q&A Pair
+                  </button>
+                </div>
               </CardContent>
             </Card>
 

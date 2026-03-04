@@ -14,6 +14,11 @@ export async function GET(
   }
 
   try {
+    const blog = await prisma.blog.findUnique({
+      where: { id: blogId },
+      select: { searchDocsSurface: true },
+    });
+
     const posts = await prisma.post.findMany({
       where: {
         blogId,
@@ -25,6 +30,7 @@ export async function GET(
         ],
       },
       select: {
+        id: true,
         title: true,
         slug: true,
         metaDescription: true,
@@ -36,7 +42,10 @@ export async function GET(
       orderBy: { publishedAt: "desc" },
     });
 
-    return NextResponse.json(posts);
+    return NextResponse.json({
+      posts,
+      searchDocsSurface: blog?.searchDocsSurface ?? false,
+    });
   } catch {
     return NextResponse.json(
       { error: "Search failed" },

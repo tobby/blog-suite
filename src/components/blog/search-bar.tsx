@@ -41,7 +41,8 @@ export function SearchBar({ blogSlug, blogId }: SearchBarProps) {
         );
         if (res.ok) {
           const data = await res.json();
-          setResults(data);
+          const posts = Array.isArray(data) ? data : data.posts ?? [];
+          setResults(posts);
           setIsOpen(true);
         }
       } catch {

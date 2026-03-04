@@ -149,10 +149,12 @@ model BlogSettings {
 }
 
 model GlobalSettings {
-  id            String   @id @default("global")
-  llmTags       Json?
-  sitemapConfig Json?
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default("global")
+  llmTags        Json?
+  sitemapConfig  Json?
+  ogDefaultImage String?
+  faqSchema      Json?
+  updatedAt      DateTime @updatedAt
 }
 
 model PageView {

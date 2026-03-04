@@ -1,14 +1,16 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { Hero } from "@/components/blog/hero";
 import { PostCard } from "@/components/blog/post-card";
 import { CategoryPills } from "@/components/blog/category-pills";
 import { SearchBar } from "@/components/blog/search-bar";
+import { BlogHeader } from "@/components/blog/blog-header";
 
 interface BlogHomeProps {
   params: Promise<{ blogSlug: string }>;
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; page?: string }>;
 }
 
 export async function generateMetadata({
@@ -37,7 +39,9 @@ export default async function BlogHomePage({
   searchParams,
 }: BlogHomeProps) {
   const { blogSlug } = await params;
-  const { category: categorySlug } = await searchParams;
+  const { category: categorySlug, page: pageParam } = await searchParams;
+  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10));
+  const pageSize = 12;
 
   const blog = await prisma.blog.findUnique({
     where: { slug: blogSlug },
@@ -45,8 +49,13 @@ export default async function BlogHomePage({
 
   if (!blog) notFound();
 
-  const [featuredPost, categories, posts] = await Promise.all([
-    // Featured post for hero
+  const postWhere = {
+    blogId: blog.id,
+    status: "Published" as const,
+    ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+  };
+
+  const [featuredPost, categories, posts, totalPosts] = await Promise.all([
     prisma.post.findFirst({
       where: {
         blogId: blog.id,
@@ -61,40 +70,32 @@ export default async function BlogHomePage({
       orderBy: { publishedAt: "desc" },
     }),
 
-    // All categories for pills
     prisma.category.findMany({
       where: { blogId: blog.id },
       orderBy: { name: "asc" },
     }),
 
-    // Published posts (filtered by category if param present)
     prisma.post.findMany({
-      where: {
-        blogId: blog.id,
-        status: "Published",
-        ...(categorySlug
-          ? { category: { slug: categorySlug } }
-          : {}),
-      },
+      where: postWhere,
       include: {
         author: true,
         category: true,
         blog: true,
       },
       orderBy: { publishedAt: "desc" },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
     }),
+
+    prisma.post.count({ where: postWhere }),
   ]);
+
+  const totalPages = Math.ceil(totalPosts / pageSize);
 
   return (
     <div className="min-h-screen bg-navy-950">
       {/* Blog Header */}
-      <header className="border-b border-border bg-navy-950/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-bold text-white">{blog.name}</h1>
-          </div>
-        </div>
-      </header>
+      <BlogHeader blogName={blog.name} />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
         {/* Hero (featured post) */}
@@ -124,6 +125,31 @@ export default async function BlogHomePage({
               <p className="text-slate-600 mt-2 text-sm">
                 Try selecting a different category or clearing the filter.
               </p>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 pt-4">
+            {currentPage > 1 && (
+              <Link
+                href={`/blog/${blogSlug}?page=${currentPage - 1}${categorySlug ? `&category=${categorySlug}` : ""}`}
+                className="rounded-md border border-border bg-navy-900 px-4 py-2 text-sm text-slate-300 hover:bg-navy-800 transition-colors"
+              >
+                Previous
+              </Link>
+            )}
+            <span className="text-sm text-slate-400">
+              Page {currentPage} of {totalPages}
+            </span>
+            {currentPage < totalPages && (
+              <Link
+                href={`/blog/${blogSlug}?page=${currentPage + 1}${categorySlug ? `&category=${categorySlug}` : ""}`}
+                className="rounded-md border border-border bg-navy-900 px-4 py-2 text-sm text-slate-300 hover:bg-navy-800 transition-colors"
+              >
+                Next
+              </Link>
             )}
           </div>
         )}

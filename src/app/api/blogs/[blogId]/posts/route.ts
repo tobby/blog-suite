@@ -72,13 +72,28 @@ export async function GET(request: NextRequest, context: RouteContext) {
       where.authorId = author.id;
     }
 
-    const posts = await prisma.post.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      include: postIncludes,
-    });
+    // Pagination
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json({ posts });
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        include: postIncludes,
+        skip,
+        take: limit,
+      }),
+      prisma.post.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      posts,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error("GET /api/blogs/[blogId]/posts error:", error);
     return NextResponse.json(
@@ -347,6 +362,60 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     console.error("PUT /api/blogs/[blogId]/posts error:", error);
     return NextResponse.json(
       { error: "Failed to update post." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { blogId } = await context.params;
+    const { searchParams } = new URL(request.url);
+    const postId = searchParams.get("postId");
+
+    if (!postId) {
+      return NextResponse.json(
+        { error: "Post ID is required." },
+        { status: 400 }
+      );
+    }
+
+    // Verify post exists and belongs to this blog
+    const existingPost = await prisma.post.findFirst({
+      where: { id: postId, blogId },
+    });
+
+    if (!existingPost) {
+      return NextResponse.json({ error: "Post not found." }, { status: 404 });
+    }
+
+    // Role-based access: Analysts can only delete their own posts
+    if (session.user.role === "Analyst") {
+      const author = await prisma.author.findFirst({
+        where: { blogId, userId: session.user.id },
+      });
+
+      if (!author || existingPost.authorId !== author.id) {
+        return NextResponse.json(
+          { error: "You do not have permission to delete this post." },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Delete the post (PostTag cascade will handle tag associations)
+    await prisma.post.delete({ where: { id: postId } });
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("DELETE /api/blogs/[blogId]/posts error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete post." },
       { status: 500 }
     );
   }

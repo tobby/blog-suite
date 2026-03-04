@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { X, AlertTriangle, CheckCircle2, Search } from "lucide-react";
 import { cn, slugify } from "@/lib/utils";
 import { SEO_LIMITS, CONTENT_LEVELS, POST_STATUSES } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ interface Tag {
 
 interface SeoSidebarProps {
   title: string;
+  body: string;
   metaTitle: string;
   metaDescription: string;
   slug: string;
@@ -75,8 +76,15 @@ function CharacterCounter({
   );
 }
 
+interface RelatedPost {
+  id: string;
+  title: string;
+  slug: string;
+}
+
 export function SeoSidebar({
   title,
+  body,
   metaTitle,
   metaDescription,
   slug: postSlug,
@@ -92,6 +100,69 @@ export function SeoSidebar({
   blogId,
 }: SeoSidebarProps) {
   const [tagInput, setTagInput] = useState("");
+  const [relatedSearch, setRelatedSearch] = useState("");
+  const [relatedResults, setRelatedResults] = useState<RelatedPost[]>([]);
+  const [selectedRelated, setSelectedRelated] = useState<RelatedPost[]>([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+
+  // Image alt-text analysis
+  const imageAnalysis = useMemo(() => {
+    if (!body) return { total: 0, withAlt: 0, missingAlt: [] as string[] };
+    const imgRegex = /<img[^>]*>/g;
+    const images = body.match(imgRegex) || [];
+    const missingAlt: string[] = [];
+    let withAlt = 0;
+
+    for (const img of images) {
+      const altMatch = img.match(/alt="([^"]*)"/);
+      const srcMatch = img.match(/src="([^"]*)"/);
+      const src = srcMatch?.[1] || "unknown";
+
+      if (altMatch && altMatch[1].trim().length > 0) {
+        withAlt++;
+      } else {
+        missingAlt.push(src);
+      }
+    }
+
+    return { total: images.length, withAlt, missingAlt };
+  }, [body]);
+
+  // Fetch related posts on search
+  useEffect(() => {
+    if (!relatedSearch.trim()) {
+      setRelatedResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setRelatedLoading(true);
+      try {
+        const res = await fetch(
+          `/api/blogs/${blogId}/search?q=${encodeURIComponent(relatedSearch)}`
+        );
+        if (res.ok) {
+          const posts = await res.json();
+          setRelatedResults(
+            posts
+              .filter((p: RelatedPost) => !relatedPostIds.includes(p.id))
+              .slice(0, 5)
+              .map((p: { title: string; slug: string; id?: string }) => ({
+                id: p.slug, // Use slug as ID since search returns slug
+                title: p.title,
+                slug: p.slug,
+              }))
+          );
+        }
+      } catch {
+        // Silently fail search
+      } finally {
+        setRelatedLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [relatedSearch, blogId, relatedPostIds]);
 
   const handleSlugChange = (value: string) => {
     onUpdate("slug", slugify(value));
@@ -101,20 +172,17 @@ export function SeoSidebar({
     const trimmed = tagInput.trim();
     if (!trimmed) return;
 
-    // Check if tag already exists in available tags
     const existingTag = availableTags.find(
       (t) => t.name.toLowerCase() === trimmed.toLowerCase()
     );
 
     if (existingTag) {
-      // Don't add duplicates
       if (tags.some((t) => t.id === existingTag.id)) {
         setTagInput("");
         return;
       }
       onUpdate("tags", [...tags, existingTag]);
     } else {
-      // Create a temporary tag with a generated slug
       const newTag: Tag = {
         id: `new-${slugify(trimmed)}`,
         name: trimmed,
@@ -144,7 +212,30 @@ export function SeoSidebar({
     }
   };
 
-  const blogSlug = "blog"; // Placeholder -- resolved from blog data at runtime
+  const handleAddRelated = useCallback(
+    (post: RelatedPost) => {
+      if (relatedPostIds.length >= 3) return;
+      const newIds = [...relatedPostIds, post.id];
+      onUpdate("relatedPostIds", newIds);
+      setSelectedRelated((prev) => [...prev, post]);
+      setRelatedSearch("");
+      setRelatedResults([]);
+    },
+    [relatedPostIds, onUpdate]
+  );
+
+  const handleRemoveRelated = useCallback(
+    (postId: string) => {
+      onUpdate(
+        "relatedPostIds",
+        relatedPostIds.filter((id) => id !== postId)
+      );
+      setSelectedRelated((prev) => prev.filter((p) => p.id !== postId));
+    },
+    [relatedPostIds, onUpdate]
+  );
+
+  const blogSlug = "blog";
   const previewUrl = `/${blogSlug}/${postSlug || "post-slug"}`;
 
   return (
@@ -245,6 +336,47 @@ export function SeoSidebar({
       </div>
 
       <SectionDivider />
+
+      {/* Image Accessibility */}
+      {imageAnalysis.total > 0 && (
+        <>
+          <div>
+            <SectionLabel>Image Accessibility</SectionLabel>
+            <div className="flex items-center gap-2 text-sm">
+              {imageAnalysis.missingAlt.length === 0 ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-neon" />
+                  <span className="text-neon">
+                    All {imageAnalysis.total} images have alt text
+                  </span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  <span className="text-amber-400">
+                    {imageAnalysis.withAlt}/{imageAnalysis.total} images have alt
+                    text
+                  </span>
+                </>
+              )}
+            </div>
+            {imageAnalysis.missingAlt.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {imageAnalysis.missingAlt.map((src, i) => (
+                  <p
+                    key={i}
+                    className="text-xs text-red-400 truncate"
+                    title={src}
+                  >
+                    Missing alt: {src.split("/").pop()}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+          <SectionDivider />
+        </>
+      )}
 
       {/* Content Level */}
       <div>
@@ -381,17 +513,72 @@ export function SeoSidebar({
       {/* Related Posts */}
       <div>
         <SectionLabel>Related Posts</SectionLabel>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 mb-2">
           Select up to 3 related posts{" "}
           {relatedPostIds.length > 0 && (
             <span className="text-slate-400">
-              ({relatedPostIds.length} selected)
+              ({relatedPostIds.length}/3 selected)
             </span>
           )}
         </p>
-        <p className="mt-1 text-xs text-slate-600 italic">
-          Enhanced selection coming soon.
-        </p>
+
+        {/* Selected related posts */}
+        {selectedRelated.length > 0 && (
+          <div className="mb-2 space-y-1">
+            {selectedRelated.map((post) => (
+              <div
+                key={post.id}
+                className="flex items-center justify-between rounded-md border border-border bg-navy-800 px-2 py-1.5"
+              >
+                <span className="text-xs text-slate-300 truncate flex-1">
+                  {post.title}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveRelated(post.id)}
+                  className="ml-2 text-slate-500 hover:text-red-400 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Search input */}
+        {relatedPostIds.length < 3 && (
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              value={relatedSearch}
+              onChange={(e) => setRelatedSearch(e.target.value)}
+              placeholder="Search posts..."
+              className="h-8 w-full rounded-md border border-border bg-navy-800 pl-7 pr-3 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-neon/50"
+            />
+            {relatedLoading && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                <div className="h-3 w-3 animate-spin rounded-full border border-neon border-t-transparent" />
+              </div>
+            )}
+
+            {/* Search results dropdown */}
+            {relatedResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-10 mt-1 rounded-md border border-border bg-navy-800 py-1 shadow-lg">
+                {relatedResults.map((post) => (
+                  <button
+                    key={post.slug}
+                    type="button"
+                    onClick={() => handleAddRelated(post)}
+                    className="w-full px-3 py-1.5 text-left text-xs text-slate-300 hover:bg-navy-700 transition-colors"
+                  >
+                    {post.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </aside>
   );

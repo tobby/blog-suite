@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ProfiledRisk Blog Suite
+
+Multi-blog content platform for the ProfiledRisk ecosystem. Each blog is fully independent with separate URLs, settings, templates, and analytics. Serves fraud managers and engineers with tiered technical content (Manager, Analyst, Engineer).
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Database**: PostgreSQL 16 + Prisma 7
+- **Auth**: NextAuth.js v5 (credentials-based, bcrypt)
+- **Editor**: TipTap rich text with syntax highlighting (lowlight)
+- **Styling**: Tailwind CSS 4 + class-variance-authority
+- **Charts**: Recharts
+- **PWA**: Service worker + manifest + offline fallback
+- **Deployment**: Docker multi-stage build + docker-compose
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL 16 (or use Docker)
+
+### Local Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your DATABASE_URL and AUTH_SECRET
+
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# Seed the database
+npx prisma db seed
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Docker
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker compose up -d
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This starts PostgreSQL 16 and the Next.js app. The app is available at `http://localhost:3000`.
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `AUTH_SECRET` | NextAuth.js secret (generate with `openssl rand -base64 32`) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+  app/
+    (auth)/           # Login/register pages
+    admin/seo/        # Global SEO settings (admin only)
+    api/              # API routes (blogs, posts, categories, authors, analytics, search, upload)
+    blog/[blogSlug]/  # Public blog renderer
+    studio/           # Studio home + per-blog admin (posts, categories, authors, settings, analytics)
+  components/
+    blog/             # Public blog components (hero, post-card, search-bar, etc.)
+    editor/           # TipTap editor, toolbar, SEO sidebar, SERP preview
+    layout/           # Header, sidebar
+    ui/               # Design system primitives (button, card, badge, input, etc.)
+  hooks/              # Custom hooks (useDebounce)
+  lib/                # Utilities (auth, prisma, seo, constants, utils)
+prisma/
+  schema.prisma       # Database schema
+  seed.ts             # Seed script (3 users, 1 blog, categories, tags, posts)
+public/
+  icons/              # PWA icons
+  sw.js               # Service worker
+  manifest.json       # PWA manifest
+  offline.html        # Offline fallback
+```
 
-## Deploy on Vercel
+## Seed Users
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Email | Password | Role |
+|-------|----------|------|
+| admin@profiledrisk.com | admin123 | Admin |
+| editor@profiledrisk.com | editor123 | ContentManager |
+| analyst@profiledrisk.com | analyst123 | Analyst |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+```bash
+npm run dev       # Start development server
+npm run build     # Production build
+npm run start     # Start production server
+npm run lint      # Run ESLint
+```
