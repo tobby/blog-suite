@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  Analyst
+  ContentManager
+  Admin
+}
+
+enum PostStatus {
+  Draft
+  Published
+  Unpublished
+}
+
+// ─── Auth Models ───────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          UserRole  @default(Analyst)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  authors       Author[]
+}
+
+// ─── Blog Platform Models ──────────────────────────────────
+
+model Blog {
+  id                String        @id @default(cuid())
+  name              String
+  slug              String        @unique
+  description       String?
+  template          String        @default("blank")
+  logoUrl           String?
+  faviconUrl        String?
+  customDomain      String?
+  searchDocsSurface Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  posts             Post[]
+  categories        Category[]
+  authors           Author[]
+  tags              Tag[]
+  settings          BlogSettings?
+  pageViews         PageView[]
+}
+
+model Author {
+  id           String   @id @default(cuid())
+  blogId       String
+  blog         Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  name         String
+  headshot     String?
+  jobTitle     String?
+  bio          String?
+  ssoReference String?
+  createdAt    DateTime @default(now())
+  posts        Post[]
+
+  @@unique([blogId, userId])
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  blogId      String
+  blog        Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  description String?
+  posts       Post[]
+
+  @@unique([blogId, slug])
+}
+
+model Tag {
+  id     String    @id @default(cuid())
+  blogId String
+  blog   Blog      @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  name   String
+  slug   String
+  posts  PostTag[]
+
+  @@unique([blogId, slug])
+}
+
+model Post {
+  id              String     @id @default(cuid())
+  blogId          String
+  blog            Blog       @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  title           String
+  slug            String
+  body            String
+  tldr            String?
+  status          PostStatus @default(Draft)
+  contentLevel    Int        @default(1)
+  authorId        String
+  author          Author     @relation(fields: [authorId], references: [id])
+  categoryId      String?
+  category        Category?  @relation(fields: [categoryId], references: [id])
+  tags            PostTag[]
+  featured        Boolean    @default(false)
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  jsonLd          Json?
+  faqSchema       Json?
+  relatedPostIds  Json?
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  publishedAt     DateTime?
+
+  pageViews       PageView[]
+
+  @@unique([blogId, slug])
+}
+
+model PostTag {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tagId  String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model BlogSettings {
+  id             String  @id @default(cuid())
+  blogId         String  @unique
+  blog           Blog    @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  llmTags        Json?
+  sitemapEnabled Boolean @default(true)
+  ogDefaultImage String?
+  customCss      String?
+  analyticsId    String?
+}
+
+model GlobalSettings {
+  id            String   @id @default("global")
+  llmTags       Json?
+  sitemapConfig Json?
+  updatedAt     DateTime @updatedAt
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  blogId    String
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+  path      String
+  referrer  String?
+  userAgent String?
+  timestamp DateTime @default(now())
+}

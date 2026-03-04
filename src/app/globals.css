@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-navy-950: #0A1628;
+  --color-navy-900: #0F1D32;
+  --color-navy-800: #162340;
+  --color-navy-700: #1E2D52;
+  --color-navy-600: #2A3B66;
+
+  --color-neon: #00FF88;
+  --color-neon-dim: #00CC6A;
+  --color-neon-bright: #33FFA0;
+
+  --color-slate-300: #CBD5E1;
+  --color-slate-400: #94A3B8;
+  --color-slate-500: #64748B;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+
+  --color-amber-400: #FBBF24;
+  --color-red-500: #EF4444;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+:root {
+  --background: #0A1628;
+  --foreground: #CBD5E1;
+  --surface: #0F1D32;
+  --surface-elevated: #162340;
+  --border: #1E2D52;
+  --accent: #00FF88;
+  --accent-dim: #00CC6A;
+  --muted: #475569;
+}
+
+[data-theme="light"] {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --surface: #FFFFFF;
+  --surface-elevated: #F1F5F9;
+  --border: #E2E8F0;
+  --accent: #00CC6A;
+  --accent-dim: #00AA55;
+  --muted: #94A3B8;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* TipTap editor styles */
+.tiptap-editor .ProseMirror {
+  min-height: 400px;
+  padding: 1.5rem;
+  outline: none;
+}
+
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted);
+  pointer-events: none;
+  height: 0;
+}
+
+.tiptap-editor .ProseMirror pre {
+  background: var(--surface);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  overflow-x: auto;
+}
+
+.tiptap-editor .ProseMirror code {
+  background: var(--surface-elevated);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.tiptap-editor .ProseMirror pre code {
+  background: none;
+  padding: 0;
+}
+
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.tiptap-editor .ProseMirror img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+}
+
+.tiptap-editor .ProseMirror h1 { font-size: 2rem; font-weight: 700; margin: 1.5rem 0 0.75rem; }
+.tiptap-editor .ProseMirror h2 { font-size: 1.5rem; font-weight: 600; margin: 1.25rem 0 0.625rem; }
+.tiptap-editor .ProseMirror h3 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+.tiptap-editor .ProseMirror ul { list-style: disc; padding-left: 1.5rem; }
+.tiptap-editor .ProseMirror ol { list-style: decimal; padding-left: 1.5rem; }
+.tiptap-editor .ProseMirror li { margin: 0.25rem 0; }
+.tiptap-editor .ProseMirror hr { border-color: var(--border); margin: 1.5rem 0; }
+.tiptap-editor .ProseMirror a { color: var(--accent); text-decoration: underline; }
