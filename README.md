@@ -1,6 +1,6 @@
-# ProfiledRisk Blog Suite
+# BlogSuite
 
-Multi-blog content platform for the ProfiledRisk ecosystem. Each blog is fully independent with separate URLs, settings, templates, and analytics. Serves fraud managers and engineers with tiered technical content (Manager, Analyst, Engineer).
+Multi-blog content platform for the BlogSuite ecosystem. Each blog is fully independent with separate URLs, settings, templates, and analytics. Serves fraud managers and engineers with tiered technical content (Manager, Analyst, Engineer).
 
 ## Tech Stack
 
@@ -89,9 +89,9 @@ public/
 
 | Email | Password | Role |
 |-------|----------|------|
-| admin@profiledrisk.com | admin123 | Admin |
-| editor@profiledrisk.com | editor123 | ContentManager |
-| analyst@profiledrisk.com | analyst123 | Analyst |
+| admin@blogsuite.com | admin123 | Admin |
+| editor@blogsuite.com | editor123 | ContentManager |
+| analyst@blogsuite.com | analyst123 | Analyst |
 
 ## Scripts
 

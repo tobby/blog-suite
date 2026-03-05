@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { BLOG_TEMPLATES, type TemplateKey } from "@/lib/constants";
+import { BLOG_TEMPLATES } from "@/lib/constants";
 
 export async function GET() {
   const session = await auth();
@@ -60,10 +60,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const templateKey = (template && template in BLOG_TEMPLATES
+  const templateKey = template && template in BLOG_TEMPLATES
     ? template
-    : "blank") as TemplateKey;
-  const templateData = BLOG_TEMPLATES[templateKey];
+    : "clean";
 
   const blog = await prisma.blog.create({
     data: {
@@ -71,25 +70,11 @@ export async function POST(request: NextRequest) {
       slug: slug.trim(),
       description: description?.trim() || null,
       template: templateKey,
-      categories: {
-        create: templateData.categories.map((cat) => ({
-          name: cat.name,
-          slug: cat.slug,
-        })),
-      },
-      tags: {
-        create: templateData.tags.map((tag) => ({
-          name: tag.name,
-          slug: tag.slug,
-        })),
-      },
       settings: {
         create: {},
       },
     },
     include: {
-      categories: true,
-      tags: true,
       settings: true,
       _count: {
         select: { posts: true },

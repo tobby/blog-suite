@@ -2,8 +2,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { Hero } from "@/components/blog/hero";
-import { PostCard } from "@/components/blog/post-card";
+import { getTemplateConfig } from "@/lib/template";
+import { HeroVariantMap } from "@/components/blog/variants/hero";
+import { PostCardVariantMap } from "@/components/blog/variants/post-card";
+import { HomeStandard } from "@/components/blog/layouts/home-standard";
+import { HomeMagazine } from "@/components/blog/layouts/home-magazine";
 import { CategoryPills } from "@/components/blog/category-pills";
 import { SearchBar } from "@/components/blog/search-bar";
 import { BlogHeader } from "@/components/blog/blog-header";
@@ -49,6 +52,10 @@ export default async function BlogHomePage({
 
   if (!blog) notFound();
 
+  const templateConfig = getTemplateConfig(blog.template);
+  const HeroComponent = HeroVariantMap[templateConfig.components.hero];
+  const CardComponent = PostCardVariantMap[templateConfig.components.postCard];
+
   const postWhere = {
     blogId: blog.id,
     status: "Published" as const,
@@ -92,14 +99,20 @@ export default async function BlogHomePage({
 
   const totalPages = Math.ceil(totalPosts / pageSize);
 
+  const showHero = featuredPost && !categorySlug && currentPage === 1;
+  const heroElement = showHero ? <HeroComponent post={featuredPost} /> : null;
+  const renderCard = (post: (typeof posts)[number]) => (
+    <CardComponent key={post.id} post={post} />
+  );
+
+  const HomeLayout = templateConfig.layout.home === "magazine" ? HomeMagazine : HomeStandard;
+
   return (
     <div className="min-h-screen bg-navy-950">
-      {/* Blog Header */}
       <BlogHeader blogName={blog.name} />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-        {/* Hero (featured post) */}
-        {featuredPost && !categorySlug && <Hero post={featuredPost} />}
+        <HomeLayout hero={heroElement} posts={posts} renderCard={renderCard} />
 
         {/* Filters row */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -110,24 +123,6 @@ export default async function BlogHomePage({
           />
           <SearchBar blogSlug={blogSlug} blogId={blog.id} />
         </div>
-
-        {/* Post grid */}
-        {posts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post: (typeof posts)[number]) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-slate-500 text-lg">No posts found.</p>
-            {categorySlug && (
-              <p className="text-slate-600 mt-2 text-sm">
-                Try selecting a different category or clearing the filter.
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Pagination */}
         {totalPages > 1 && (

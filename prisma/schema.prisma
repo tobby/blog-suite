@@ -39,7 +39,7 @@ model Blog {
   name              String
   slug              String        @unique
   description       String?
-  template          String        @default("blank")
+  template          String        @default("clean")
   logoUrl           String?
   faviconUrl        String?
   customDomain      String?

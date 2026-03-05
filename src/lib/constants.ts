@@ -4,59 +4,54 @@ export const CONTENT_LEVELS = {
   3: { label: "Level 3 — Engineer", description: "Code-heavy implementation" },
 } as const;
 
-export const BLOG_TEMPLATES = {
-  blank: {
-    label: "Blank",
-    description: "Start from scratch with no preset content",
-    categories: [],
-    tags: [],
+export type HomeLayout = "standard" | "magazine";
+export type PostLayout = "sidebar" | "docs";
+export type ArchiveLayout = "grid" | "list";
+export type HeroVariant = "default" | "magazine" | "minimal";
+export type PostCardVariant = "default" | "overlay" | "horizontal";
+export type PostHeaderVariant = "default" | "docs" | "banner";
+
+export interface TemplateConfig {
+  label: string;
+  description: string;
+  layout: {
+    home: HomeLayout;
+    post: PostLayout;
+    archive: ArchiveLayout;
+  };
+  components: {
+    hero: HeroVariant;
+    postCard: PostCardVariant;
+    postHeader: PostHeaderVariant;
+  };
+}
+
+export const BLOG_TEMPLATES: Record<string, TemplateConfig> = {
+  clean: {
+    label: "Clean",
+    description: "Balanced and versatile — works for any content",
+    layout: { home: "standard", post: "sidebar", archive: "grid" },
+    components: { hero: "default", postCard: "default", postHeader: "default" },
   },
-  "fraud-intel": {
-    label: "Fraud Intelligence",
-    description: "Pre-configured for fraud analysis content",
-    categories: [
-      { name: "Fraud Patterns", slug: "fraud-patterns" },
-      { name: "Case Studies", slug: "case-studies" },
-      { name: "Threat Intel", slug: "threat-intel" },
-    ],
-    tags: [
-      { name: "AML", slug: "aml" },
-      { name: "KYC", slug: "kyc" },
-      { name: "Synthetic ID", slug: "synthetic-id" },
-      { name: "Account Takeover", slug: "account-takeover" },
-    ],
+  bold: {
+    label: "Bold",
+    description: "High-impact and visual — ideal for news and features",
+    layout: { home: "magazine", post: "sidebar", archive: "grid" },
+    components: { hero: "magazine", postCard: "overlay", postHeader: "default" },
   },
-  engineering: {
-    label: "Engineering",
-    description: "Pre-configured for technical engineering content",
-    categories: [
-      { name: "Architecture", slug: "architecture" },
-      { name: "APIs", slug: "apis" },
-      { name: "Infrastructure", slug: "infrastructure" },
-    ],
-    tags: [
-      { name: "Backend", slug: "backend" },
-      { name: "Frontend", slug: "frontend" },
-      { name: "DevOps", slug: "devops" },
-      { name: "Performance", slug: "performance" },
-    ],
+  minimal: {
+    label: "Minimal",
+    description: "Stripped-back and focused — great for technical writing",
+    layout: { home: "standard", post: "docs", archive: "list" },
+    components: { hero: "minimal", postCard: "horizontal", postHeader: "docs" },
   },
-  compliance: {
-    label: "Compliance",
-    description: "Pre-configured for regulatory and compliance content",
-    categories: [
-      { name: "Regulations", slug: "regulations" },
-      { name: "Audit", slug: "audit" },
-      { name: "Risk", slug: "risk" },
-    ],
-    tags: [
-      { name: "SOX", slug: "sox" },
-      { name: "PCI", slug: "pci" },
-      { name: "GDPR", slug: "gdpr" },
-      { name: "BSA", slug: "bsa" },
-    ],
+  formal: {
+    label: "Formal",
+    description: "Structured and professional — suited for corporate content",
+    layout: { home: "standard", post: "sidebar", archive: "grid" },
+    components: { hero: "default", postCard: "default", postHeader: "banner" },
   },
-} as const;
+};
 
 export type TemplateKey = keyof typeof BLOG_TEMPLATES;
 

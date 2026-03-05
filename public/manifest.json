@@ -1,6 +1,6 @@
 {
-  "name": "ProfiledRisk Blog Suite",
-  "short_name": "ProfiledRisk",
+  "name": "BlogSuite",
+  "short_name": "BlogSuite",
   "description": "Forensic-grade content platform for fraud intelligence",
   "start_url": "/",
   "display": "standalone",

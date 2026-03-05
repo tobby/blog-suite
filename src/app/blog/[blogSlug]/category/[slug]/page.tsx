@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getTemplateConfig } from "@/lib/template";
+import { PostCardVariantMap } from "@/components/blog/variants/post-card";
+import { ArchiveGrid } from "@/components/blog/layouts/archive-grid";
+import { ArchiveList } from "@/components/blog/layouts/archive-list";
 import { Breadcrumbs } from "@/components/blog/breadcrumbs";
-import { PostCard } from "@/components/blog/post-card";
 
 interface CategoryPageProps {
   params: Promise<{ blogSlug: string; slug: string }>;
@@ -42,6 +45,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   if (!blog) notFound();
 
+  const templateConfig = getTemplateConfig(blog.template);
+  const CardComponent = PostCardVariantMap[templateConfig.components.postCard];
+  const ArchiveLayout = templateConfig.layout.archive === "list" ? ArchiveList : ArchiveGrid;
+
   const category = await prisma.category.findUnique({
     where: { blogId_slug: { blogId: blog.id, slug } },
   });
@@ -68,6 +75,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     { label: category.name, href: `/blog/${blogSlug}/category/${slug}` },
   ];
 
+  const renderCard = (post: (typeof posts)[number]) => (
+    <CardComponent key={post.id} post={post} />
+  );
+
   return (
     <div className="min-h-screen bg-navy-950">
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
@@ -82,19 +93,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </p>
         )}
 
-        {posts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-8">
-            {posts.map((post: (typeof posts)[number]) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-slate-500 text-lg">
-              No published posts in this category yet.
-            </p>
-          </div>
-        )}
+        <ArchiveLayout posts={posts} renderCard={renderCard} />
       </main>
     </div>
   );

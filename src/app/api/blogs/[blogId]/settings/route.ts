@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { BLOG_TEMPLATES } from "@/lib/constants";
 
 interface RouteContext {
   params: Promise<{ blogId: string }>;
@@ -22,6 +23,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         name: true,
         slug: true,
         description: true,
+        template: true,
         customDomain: true,
         searchDocsSurface: true,
       },
@@ -59,7 +61,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const { blogId } = await context.params;
     const body = await request.json();
-    const { name, slug, description, customDomain, searchDocsSurface } = body;
+    const { name, slug, description, template, customDomain, searchDocsSurface } = body;
 
     if (!name?.trim()) {
       return NextResponse.json(
@@ -98,12 +100,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       }
     }
 
+    const validTemplate = template && template in BLOG_TEMPLATES ? template : undefined;
+
     const blog = await prisma.blog.update({
       where: { id: blogId },
       data: {
         name: name.trim(),
         slug: slug.trim(),
         description: description?.trim() || null,
+        ...(validTemplate !== undefined && { template: validTemplate }),
         customDomain: customDomain?.trim() || null,
         searchDocsSurface: searchDocsSurface ?? existingBlog.searchDocsSurface,
       },
@@ -112,6 +117,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         name: true,
         slug: true,
         description: true,
+        template: true,
         customDomain: true,
         searchDocsSurface: true,
       },

@@ -69,7 +69,7 @@ export default function RegisterPage() {
             <Shield className="h-6 w-6 text-neon" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            ProfiledRisk
+            BlogSuite
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             Create your analyst account
@@ -96,7 +96,7 @@ export default function RegisterPage() {
             <Input
               label="Email"
               type="email"
-              placeholder="analyst@profiledrisk.com"
+              placeholder="analyst@blogsuite.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"

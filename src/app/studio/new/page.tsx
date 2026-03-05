@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { cn, slugify } from "@/lib/utils";
-import { BLOG_TEMPLATES, type TemplateKey } from "@/lib/constants";
+import { BLOG_TEMPLATES } from "@/lib/constants";
 
-const templateKeys = Object.keys(BLOG_TEMPLATES) as TemplateKey[];
+const templateKeys = Object.keys(BLOG_TEMPLATES);
 
 export default function CreateBlogPage() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function CreateBlogPage() {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
-  const [template, setTemplate] = useState<TemplateKey>("blank");
+  const [template, setTemplate] = useState("clean");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -123,15 +123,15 @@ export default function CreateBlogPage() {
 
             <div className="space-y-3">
               <label className="text-sm font-medium text-slate-300">
-                Template
+                Design Template
               </label>
               <p className="text-xs text-slate-500">
-                Templates pre-configure categories and tags. You can customize
-                them later.
+                Controls the layout and visual style of your blog. You can change
+                this later in settings.
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {templateKeys.map((key) => {
-                  const tmpl = BLOG_TEMPLATES[key];
+                  const tmpl = BLOG_TEMPLATES[key]!;
                   const isSelected = template === key;
 
                   return (
@@ -170,12 +170,6 @@ export default function CreateBlogPage() {
                         <p className="mt-2 text-xs text-slate-500">
                           {tmpl.description}
                         </p>
-                        {tmpl.categories.length > 0 && (
-                          <p className="mt-2 text-xs text-slate-600">
-                            {tmpl.categories.length} categories &middot;{" "}
-                            {tmpl.tags.length} tags
-                          </p>
-                        )}
                       </Card>
                     </button>
                   );

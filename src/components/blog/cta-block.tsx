@@ -14,7 +14,7 @@ const CTA_CONFIG: Record<
   1: {
     heading: "Ready to see it in action?",
     description:
-      "Schedule a personalized demo with our team and discover how ProfiledRisk can transform your security posture.",
+      "Schedule a personalized demo with our team and discover how BlogSuite can transform your security posture.",
     label: "Schedule a demo",
     href: "/demo",
   },
@@ -28,7 +28,7 @@ const CTA_CONFIG: Record<
   3: {
     heading: "Build on our platform",
     description:
-      "Integrate ProfiledRisk into your existing workflows with our comprehensive API documentation.",
+      "Integrate BlogSuite into your existing workflows with our comprehensive API documentation.",
     label: "Explore our API docs",
     href: "/docs/api",
   },

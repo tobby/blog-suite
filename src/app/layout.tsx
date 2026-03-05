@@ -5,7 +5,7 @@ import { ServiceWorkerRegister } from "@/components/providers/sw-register";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ProfiledRisk Blog Suite",
+  title: "BlogSuite",
   description: "Forensic-grade content platform for fraud intelligence",
 };
 

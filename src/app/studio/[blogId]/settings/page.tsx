@@ -2,18 +2,22 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Save, Settings, Loader2 } from "lucide-react";
+import { Save, Settings, Loader2, Palette } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { slugify } from "@/lib/utils";
+import { slugify, cn } from "@/lib/utils";
+import { BLOG_TEMPLATES } from "@/lib/constants";
+
+const templateKeys = Object.keys(BLOG_TEMPLATES);
 
 interface BlogSettings {
   id: string;
   name: string;
   slug: string;
   description: string | null;
+  template: string;
   customDomain: string | null;
   searchDocsSurface: boolean;
 }
@@ -32,6 +36,7 @@ export default function SettingsPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [template, setTemplate] = useState("clean");
   const [customDomain, setCustomDomain] = useState("");
   const [searchDocsSurface, setSearchDocsSurface] = useState(false);
 
@@ -46,6 +51,7 @@ export default function SettingsPage() {
       setName(blog.name);
       setSlug(blog.slug);
       setDescription(blog.description ?? "");
+      setTemplate(blog.template ?? "clean");
       setCustomDomain(blog.customDomain ?? "");
       setSearchDocsSurface(blog.searchDocsSurface);
     } catch {
@@ -82,6 +88,7 @@ export default function SettingsPage() {
           name: name.trim(),
           slug: slug.trim(),
           description: description.trim() || null,
+          template,
           customDomain: customDomain.trim() || null,
           searchDocsSurface,
         }),
@@ -121,7 +128,18 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Settings Form */}
+      {error && (
+        <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-md border border-neon/30 bg-neon/10 px-4 py-3 text-sm text-neon">
+          Settings saved successfully.
+        </div>
+      )}
+
+      {/* General Settings */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -133,17 +151,6 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-5 max-w-2xl">
-            {error && (
-              <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="rounded-md border border-neon/30 bg-neon/10 px-4 py-3 text-sm text-neon">
-                Settings saved successfully.
-              </div>
-            )}
-
             <Input
               label="Blog Name"
               value={name}
@@ -205,16 +212,80 @@ export default function SettingsPage() {
                 documentation results.
               </p>
             </div>
-
-            <div className="flex items-center gap-3 pt-4 border-t border-border">
-              <Button onClick={handleSave} loading={saving}>
-                <Save className="h-4 w-4" />
-                Save Settings
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Design Template */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Palette className="h-5 w-5 text-slate-400" />
+            <h2 className="text-lg font-semibold text-white">
+              Design Template
+            </h2>
+          </div>
+          <p className="text-sm text-slate-500">
+            Controls the layout and component styles of your public blog.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 max-w-2xl">
+            {templateKeys.map((key) => {
+              const tmpl = BLOG_TEMPLATES[key]!;
+              const isSelected = template === key;
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTemplate(key)}
+                  className="text-left"
+                >
+                  <Card
+                    className={cn(
+                      "cursor-pointer p-4 transition-colors",
+                      isSelected
+                        ? "border-neon bg-neon/5 shadow-sm shadow-neon/10"
+                        : "hover:border-navy-600"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          "h-3 w-3 rounded-full border-2",
+                          isSelected
+                            ? "border-neon bg-neon"
+                            : "border-slate-600 bg-transparent"
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "text-sm font-medium",
+                          isSelected ? "text-neon" : "text-slate-300"
+                        )}
+                      >
+                        {tmpl.label}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {tmpl.description}
+                    </p>
+                  </Card>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Save Button */}
+      <div className="flex items-center gap-3 border-t border-border pt-6">
+        <Button onClick={handleSave} loading={saving}>
+          <Save className="h-4 w-4" />
+          Save Settings
+        </Button>
+      </div>
     </div>
   );
 }

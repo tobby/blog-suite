@@ -14,7 +14,7 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-navy-700 bg-navy-950">
       <div className="flex h-full items-center justify-between px-6">
         <Link href="/studio" className="flex items-center gap-2">
-          <span className="text-lg font-bold text-neon">ProfiledRisk</span>
+          <span className="text-lg font-bold text-neon">BlogSuite</span>
           <span className="text-sm font-medium text-slate-400">Studio</span>
         </Link>
 

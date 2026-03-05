@@ -23,7 +23,7 @@ export function generateArticleJsonLd(post: ArticleData, url: string) {
     },
     publisher: {
       "@type": "Organization",
-      name: "ProfiledRisk",
+      name: "BlogSuite",
     },
     datePublished: post.publishedAt?.toISOString(),
     dateModified: post.updatedAt.toISOString(),

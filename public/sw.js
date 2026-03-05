@@ -1,4 +1,4 @@
-const CACHE_NAME = "profiledrisk-blog-v1";
+const CACHE_NAME = "blogsuite-v1";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_URLS = [
