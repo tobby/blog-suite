@@ -29,8 +29,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/src/generated ./src/generated
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Install production dependencies (includes prisma CLI + all transitive deps)
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
